@@ -14,32 +14,34 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn.utils;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ByteBufferPool
-{
-    private static final int BUFFER_SIZE = 16384; // XXX: Is this ideal?
+public class ByteBufferPool {
+    /**
+     * 默认大小
+     */
+    private static final int BUFFER_SIZE = 16384;
+    /**
+     * 缓存池
+     */
     private static ConcurrentLinkedQueue<ByteBuffer> pool = new ConcurrentLinkedQueue<>();
 
-    public static ByteBuffer acquire()
-    {
+    public static ByteBuffer acquire() {
         ByteBuffer buffer = pool.poll();
         if (buffer == null)
             buffer = ByteBuffer.allocateDirect(BUFFER_SIZE); // Using DirectBuffer for zero-copy
         return buffer;
     }
 
-    public static void release(ByteBuffer buffer)
-    {
+    public static void release(ByteBuffer buffer) {
         buffer.clear();
         pool.offer(buffer);
     }
 
-    public static void clear()
-    {
+    public static void clear() {
         pool.clear();
     }
 }

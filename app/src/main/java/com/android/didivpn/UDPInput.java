@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn;
 
 import android.util.Log;
 
@@ -27,10 +27,12 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.android.didivpn.utils.PacketHelper;
+
 public class UDPInput implements Runnable
 {
     private static final String TAG = UDPInput.class.getSimpleName();
-    private static final int HEADER_SIZE = Packet.IP4_HEADER_SIZE + Packet.UDP_HEADER_SIZE;
+    private static final int HEADER_SIZE = PacketHelper.IP4_HEADER_SIZE + PacketHelper.UDP_HEADER_SIZE;
 
     private Selector selector;
     private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
@@ -75,8 +77,8 @@ public class UDPInput implements Runnable
                         // but that probably won't happen with UDP
                         int readBytes = inputChannel.read(receiveBuffer);
 
-                        Packet referencePacket = (Packet) key.attachment();
-                        referencePacket.updateUDPBuffer(receiveBuffer, readBytes);
+                        PacketHelper referencePacketHelper = (PacketHelper) key.attachment();
+                        referencePacketHelper.updateUDPBuffer(receiveBuffer, readBytes);
                         receiveBuffer.position(HEADER_SIZE + readBytes);
 
                         outputQueue.offer(receiveBuffer);

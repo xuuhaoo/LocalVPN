@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -28,7 +28,7 @@ import android.view.View;
 import android.widget.Button;
 
 
-public class LocalVPN extends ActionBarActivity
+public class LocalVPNActivity extends ActionBarActivity
 {
     private static final int VPN_REQUEST_CODE = 0x0F;
 

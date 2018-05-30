@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn;
 
 import android.util.Log;
 
@@ -27,11 +27,14 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import xyz.hexene.localvpn.TCB.TCBStatus;
+import com.android.didivpn.TCB.Status;
+import com.android.didivpn.utils.PacketHelper;
+import com.android.didivpn.packet.TCP;
+import com.android.didivpn.packet.ip.IPv4;
 
 public class TCPInput implements Runnable {
     private static final String TAG = TCPInput.class.getSimpleName();
-    private static final int HEADER_SIZE = Packet.IP4_HEADER_SIZE + Packet.TCP_HEADER_SIZE;
+    private static final int HEADER_SIZE = IPv4.IP4_FIXED_HEADER_LENGTH + TCP.TCP_FIXED_HEADER_LENGTH;
 
     private ConcurrentLinkedQueue<ByteBuffer> outputQueue;
     private Selector selector;
@@ -75,15 +78,15 @@ public class TCPInput implements Runnable {
 
     private void processConnect(SelectionKey key, Iterator<SelectionKey> keyIterator) {
         TCB tcb = (TCB) key.attachment();
-        Packet referencePacket = tcb.referencePacket;
+        PacketHelper referencePacketHelper = tcb.mReferencePacketHelper;
         try {
             if (tcb.channel.finishConnect()) {
                 keyIterator.remove();
-                tcb.status = TCBStatus.SYN_RECEIVED;
+                tcb.status = Status.SYN_RECEIVED;
 
                 // TODO: Set MSS for receiving larger packets from the device
                 ByteBuffer responseBuffer = ByteBufferPool.acquire();
-                referencePacket.updateTCPBuffer(responseBuffer, (byte) (Packet.TCPHeader.SYN | Packet.TCPHeader.ACK),
+                referencePacketHelper.updateTCPBuffer(responseBuffer, (byte) (PacketHelper.TCPHeader.SYN | PacketHelper.TCPHeader.ACK),
                         tcb.mySequenceNum, tcb.myAcknowledgementNum, 0);
                 outputQueue.offer(responseBuffer);
 
@@ -93,7 +96,7 @@ public class TCPInput implements Runnable {
         } catch (IOException e) {
             Log.e(TAG, "Connection error: " + tcb.ipAndPort, e);
             ByteBuffer responseBuffer = ByteBufferPool.acquire();
-            referencePacket.updateTCPBuffer(responseBuffer, (byte) Packet.TCPHeader.RST, 0, tcb.myAcknowledgementNum, 0);
+            referencePacketHelper.updateTCPBuffer(responseBuffer, (byte) PacketHelper.TCPHeader.RST, 0, tcb.myAcknowledgementNum, 0);
             outputQueue.offer(responseBuffer);
             TCB.closeTCB(tcb);
         }
@@ -107,14 +110,14 @@ public class TCPInput implements Runnable {
 
         TCB tcb = (TCB) key.attachment();
         synchronized (tcb) {
-            Packet referencePacket = tcb.referencePacket;
+            PacketHelper referencePacketHelper = tcb.mReferencePacketHelper;
             SocketChannel inputChannel = (SocketChannel) key.channel();
             int readBytes;
             try {
                 readBytes = inputChannel.read(receiveBuffer);
             } catch (IOException e) {
                 Log.e(TAG, "Network read error: " + tcb.ipAndPort, e);
-                referencePacket.updateTCPBuffer(receiveBuffer, (byte) Packet.TCPHeader.RST, 0, tcb.myAcknowledgementNum, 0);
+                referencePacketHelper.updateTCPBuffer(receiveBuffer, (byte) PacketHelper.TCPHeader.RST, 0, tcb.myAcknowledgementNum, 0);
                 outputQueue.offer(receiveBuffer);
                 TCB.closeTCB(tcb);
                 return;
@@ -125,17 +128,17 @@ public class TCPInput implements Runnable {
                 key.interestOps(0);
                 tcb.waitingForNetworkData = false;
 
-                if (tcb.status != TCBStatus.CLOSE_WAIT) {
+                if (tcb.status != Status.CLOSE_WAIT) {
                     ByteBufferPool.release(receiveBuffer);
                     return;
                 }
 
-                tcb.status = TCBStatus.LAST_ACK;
-                referencePacket.updateTCPBuffer(receiveBuffer, (byte) Packet.TCPHeader.FIN, tcb.mySequenceNum, tcb.myAcknowledgementNum, 0);
+                tcb.status = Status.LAST_ACK;
+                referencePacketHelper.updateTCPBuffer(receiveBuffer, (byte) PacketHelper.TCPHeader.FIN, tcb.mySequenceNum, tcb.myAcknowledgementNum, 0);
                 tcb.mySequenceNum++; // FIN counts as a byte
             } else {
                 // XXX: We should ideally be splitting segments by MTU/MSS, but this seems to work without
-                referencePacket.updateTCPBuffer(receiveBuffer, (byte) (Packet.TCPHeader.PSH | Packet.TCPHeader.ACK),
+                referencePacketHelper.updateTCPBuffer(receiveBuffer, (byte) (PacketHelper.TCPHeader.PSH | PacketHelper.TCPHeader.ACK),
                         tcb.mySequenceNum, tcb.myAcknowledgementNum, readBytes);
                 tcb.mySequenceNum += readBytes; // Next sequence number
                 receiveBuffer.position(HEADER_SIZE + readBytes);

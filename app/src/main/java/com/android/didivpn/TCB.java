@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -22,18 +22,23 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.android.didivpn.utils.LRUCache;
+import com.android.didivpn.utils.PacketHelper;
+
 /**
  * Transmission Control Block
  */
 public class TCB {
     public String ipAndPort;
 
-    public long mySequenceNum, theirSequenceNum;
-    public long myAcknowledgementNum, theirAcknowledgementNum;
-    public TCBStatus status;
+    public long mySequenceNum;
+    public long theirSequenceNum;
+    public long myAcknowledgementNum;
+    public long theirAcknowledgementNum;
+    public Status status;
 
     // TCP has more states, but we need only these
-    public enum TCBStatus {
+    public enum Status {
         SYN_SENT,
         SYN_RECEIVED,
         ESTABLISHED,
@@ -41,13 +46,13 @@ public class TCB {
         LAST_ACK,
     }
 
-    public Packet referencePacket;
+    public PacketHelper mReferencePacketHelper;
 
     public SocketChannel channel;
     public boolean waitingForNetworkData;
     public SelectionKey selectionKey;
 
-    private static final int MAX_CACHE_SIZE = 50; // XXX: Is this ideal?
+    private static final int MAX_CACHE_SIZE = 500; // XXX: Is this ideal?
     private static LRUCache<String, TCB> tcbCache =
             new LRUCache<>(MAX_CACHE_SIZE, new LRUCache.CleanupCallback<String, TCB>() {
                 @Override
@@ -69,7 +74,7 @@ public class TCB {
     }
 
     public TCB(String ipAndPort, long mySequenceNum, long theirSequenceNum, long myAcknowledgementNum, long theirAcknowledgementNum,
-               SocketChannel channel, Packet referencePacket) {
+               SocketChannel channel, PacketHelper referencePacketHelper) {
         this.ipAndPort = ipAndPort;
 
         this.mySequenceNum = mySequenceNum;
@@ -78,7 +83,7 @@ public class TCB {
         this.theirAcknowledgementNum = theirAcknowledgementNum;
 
         this.channel = channel;
-        this.referencePacket = referencePacket;
+        this.mReferencePacketHelper = referencePacketHelper;
     }
 
     public static void closeTCB(TCB tcb) {

@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-package xyz.hexene.localvpn;
+package com.android.didivpn;
 
 import android.util.Log;
 
@@ -29,12 +29,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.android.didivpn.utils.LRUCache;
+import com.android.didivpn.utils.PacketHelper;
+
 public class UDPOutput implements Runnable
 {
     private static final String TAG = UDPOutput.class.getSimpleName();
 
     private LocalVPNService vpnService;
-    private ConcurrentLinkedQueue<Packet> inputQueue;
+    private ConcurrentLinkedQueue<PacketHelper> inputQueue;
     private Selector selector;
 
     private static final int MAX_CACHE_SIZE = 50;
@@ -48,7 +51,7 @@ public class UDPOutput implements Runnable
                 }
             });
 
-    public UDPOutput(ConcurrentLinkedQueue<Packet> inputQueue, Selector selector, LocalVPNService vpnService)
+    public UDPOutput(ConcurrentLinkedQueue<PacketHelper> inputQueue, Selector selector, LocalVPNService vpnService)
     {
         this.inputQueue = inputQueue;
         this.selector = selector;
@@ -65,12 +68,12 @@ public class UDPOutput implements Runnable
             Thread currentThread = Thread.currentThread();
             while (true)
             {
-                Packet currentPacket;
+                PacketHelper currentPacketHelper;
                 // TODO: Block when not connected
                 do
                 {
-                    currentPacket = inputQueue.poll();
-                    if (currentPacket != null)
+                    currentPacketHelper = inputQueue.poll();
+                    if (currentPacketHelper != null)
                         break;
                     Thread.sleep(10);
                 } while (!currentThread.isInterrupted());
@@ -78,9 +81,9 @@ public class UDPOutput implements Runnable
                 if (currentThread.isInterrupted())
                     break;
 
-                InetAddress destinationAddress = currentPacket.ip4Header.destinationAddress;
-                int destinationPort = currentPacket.udpHeader.destinationPort;
-                int sourcePort = currentPacket.udpHeader.sourcePort;
+                InetAddress destinationAddress = currentPacketHelper.ip4.destinationAddress;
+                int destinationPort = currentPacketHelper.udp.destinationPort;
+                int sourcePort = currentPacketHelper.udp.sourcePort;
 
                 String ipAndPort = destinationAddress.getHostAddress() + ":" + destinationPort + ":" + sourcePort;
                 DatagramChannel outputChannel = channelCache.get(ipAndPort);
@@ -95,21 +98,21 @@ public class UDPOutput implements Runnable
                     {
                         Log.e(TAG, "Connection error: " + ipAndPort, e);
                         closeChannel(outputChannel);
-                        ByteBufferPool.release(currentPacket.backingBuffer);
+                        ByteBufferPool.release(currentPacketHelper.backingBuffer);
                         continue;
                     }
                     outputChannel.configureBlocking(false);
-                    currentPacket.swapSourceAndDestination();
+                    currentPacketHelper.swapSourceAndDestination();
 
                     selector.wakeup();
-                    outputChannel.register(selector, SelectionKey.OP_READ, currentPacket);
+                    outputChannel.register(selector, SelectionKey.OP_READ, currentPacketHelper);
 
                     channelCache.put(ipAndPort, outputChannel);
                 }
 
                 try
                 {
-                    ByteBuffer payloadBuffer = currentPacket.backingBuffer;
+                    ByteBuffer payloadBuffer = currentPacketHelper.backingBuffer;
                     while (payloadBuffer.hasRemaining())
                         outputChannel.write(payloadBuffer);
                 }
@@ -119,7 +122,7 @@ public class UDPOutput implements Runnable
                     channelCache.remove(ipAndPort);
                     closeChannel(outputChannel);
                 }
-                ByteBufferPool.release(currentPacket.backingBuffer);
+                ByteBufferPool.release(currentPacketHelper.backingBuffer);
             }
         }
         catch (InterruptedException e)
