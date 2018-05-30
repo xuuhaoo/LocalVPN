@@ -14,22 +14,22 @@ public class UDP extends Packet {
     /**
      * source port(16bits)
      */
-    static final short offset_src_port = 0;
+    public static final short offset_src_port = 0;
 
     /**
      * destination port(16bits)
      */
-    static final short offset_dest_port = 2;
+    public static final short offset_dest_port = 2;
 
     /**
      * udp head+data length (16bits)
      */
-    static final int offset_udp_length = 4;
+    public static final int offset_udp_length = 4;
 
     /**
      * check sum (16bits)
      */
-    static final int offset_check_sum = 6;
+    public static final int offset_check_sum = 6;
 
     public UDP(IP ip) {
         super(parse2UDPBytes(ip));

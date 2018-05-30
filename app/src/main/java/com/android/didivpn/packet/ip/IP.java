@@ -12,7 +12,7 @@ public abstract class IP extends Packet {
     /**
      * ip version and internet header length
      */
-    static final byte offset_ver_and_ihl = 0;
+    public static final byte offset_ver_and_ihl = 0;
 
     protected IP(byte[] packetBuf) {
         super(packetBuf);

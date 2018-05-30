@@ -1,5 +1,6 @@
-package com.android.didivpn.runnable;
+package com.android.didivpn.runnable.virtual;
 
+import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 
 import com.android.didivpn.packet.TCP;
@@ -13,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
+ * 虚拟网卡的写出,所有请求经过我们转发出到Internet
  * Created by didi on 2018/5/30.
  */
 
@@ -20,14 +22,16 @@ public class VirtualWrite implements Runnable {
 
     private ParcelFileDescriptor mParcelFileDescriptor;
 
-    public VirtualWrite(ParcelFileDescriptor parcelFileDescriptor) {
+    private VpnService mVpnService;
+
+    public VirtualWrite(ParcelFileDescriptor parcelFileDescriptor, VpnService vpnService) {
         mParcelFileDescriptor = parcelFileDescriptor;
+        mVpnService = vpnService;
     }
 
     @Override
     public void run() {
         FileChannel channel = new FileInputStream(mParcelFileDescriptor.getFileDescriptor()).getChannel();
-
         while (!Thread.interrupted()) {
             IPv4 iPv4 = null;
             try {
@@ -48,7 +52,6 @@ public class VirtualWrite implements Runnable {
                     channel.write(byteBuffer);
                 }
                 byteBuffer.clear();
-                byteBuffer = null;
             } catch (IOException e) {
                 e.printStackTrace();
             }

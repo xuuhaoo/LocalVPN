@@ -13,45 +13,45 @@ public class TCP extends Packet {
     /**
      * source port(16bits)
      */
-    static final short offset_src_port = 0;
+    public static final short offset_src_port = 0;
 
     /**
      * destination port(16bits)
      */
-    static final short offset_dest_port = 2;
+    public static final short offset_dest_port = 2;
 
     /**
      * sequence number (32bits)
      */
-    static final int offset_seq_num = 4;
+    public static final int offset_seq_num = 4;
 
     /**
      * acknowledgment number (32bits)
      */
-    static final int offset_ack_num = 8;
+    public static final int offset_ack_num = 8;
 
     /**
      * header length (8bits)
      */
-    static final byte offset_hdr_len = 12;
+    public static final byte offset_hdr_len = 12;
 
     /**
      * flags (8bits)
      */
-    static final byte offset_flags = 13;
+    public static final byte offset_flags = 13;
 
     /**
      * receive window (16bits)
      */
-    static final short offset_recv_window = 14;
+    public static final short offset_recv_window = 14;
     /**
      * check sum (16Bits)
      */
-    static final short offset_checksum = 16;
+    public static final short offset_checksum = 16;
     /**
      * emergency pointer (16Bits)
      */
-    static final short offset_emergency = 18;
+    public static final short offset_emergency = 18;
 
     public static final byte FIN = 1;
     public static final byte SYN = 2;

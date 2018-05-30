@@ -11,47 +11,47 @@ public class IPv4 extends IP {
     /**
      * type of service
      */
-    static final byte offset_tos = 1;
+    public static final byte offset_tos = 1;
 
     /**
      * total length,including the length of header (16bits)
      */
-    static final short offset_tot_len = 2;
+    public static final short offset_tot_len = 2;
 
     /**
      * identification (16bits)
      */
-    static final short offset_id = 4;
+    public static final short offset_id = 4;
 
     /**
      * 3bits used for flag,and 13bits for fragment offset (total 16bits)
      */
-    static final short offset_flag_and_frag_off = 6;
+    public static final short offset_flag_and_frag_off = 6;
 
     /**
      * time to live
      */
-    static final byte offset_ttl = 8;
+    public static final byte offset_ttl = 8;
 
     /**
      * protocol
      */
-    static final byte offset_protocol = 9;
+    public static final byte offset_protocol = 9;
 
     /**
      * header checksum (16bits)
      */
-    static final short offset_header_checksum = 10;
+    public static final short offset_header_checksum = 10;
 
     /**
      * source ip (32bits)
      */
-    static final int offset_src_ip = 12;
+    public static final int offset_src_ip = 12;
 
     /**
      * destination ip (32bits)
      */
-    static final int offset_dest_ip = 16;
+    public static final int offset_dest_ip = 16;
 
     public IPv4(byte[] packetBuf) {
         super(packetBuf);

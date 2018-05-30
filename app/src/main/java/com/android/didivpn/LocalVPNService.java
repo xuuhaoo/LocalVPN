@@ -16,28 +16,18 @@
 
 package com.android.didivpn;
 
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.ParcelFileDescriptor;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import java.io.Closeable;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.Selector;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import com.android.didivpn.runnable.virtual.VirtualRead;
+import com.android.didivpn.runnable.virtual.VirtualWrite;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.android.didivpn.packet.ip.IPv4;
-import com.android.didivpn.utils.ByteBufferPool;
-import com.android.didivpn.utils.PacketHelper;
 
 public class LocalVPNService extends VpnService {
     private static final String TAG = LocalVPNService.class.getSimpleName();
@@ -48,26 +38,30 @@ public class LocalVPNService extends VpnService {
 
     private static boolean isRunning = false;
 
-    private ParcelFileDescriptor vpnInterface = null;
+    private ParcelFileDescriptor mParcelFileDescriptor = null;
 
-    private ExecutorService executorService;
+    private ExecutorService threadPool;
 
     @Override
     public void onCreate() {
         super.onCreate();
         isRunning = true;
-        setupVPN();
-        executorService = Executors.newFixedThreadPool(5);
+        initVPN();
+        threadPool = Executors.newCachedThreadPool();
+        threadPool.submit(new VirtualRead(mParcelFileDescriptor));
+        threadPool.submit(new VirtualWrite(mParcelFileDescriptor,this));
+
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
         Log.i(TAG, "Started");
     }
 
-    private void setupVPN() {
-        if (vpnInterface == null) {
+    private void initVPN() {
+        if (mParcelFileDescriptor == null) {
             Builder builder = new Builder();
             builder.addAddress(VPN_ADDRESS, 32);
             builder.addRoute(VPN_ROUTE, 0);
-            vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
+            builder.setSession(getString(R.string.app_name));
+            mParcelFileDescriptor = builder.establish();
         }
     }
 
@@ -84,7 +78,7 @@ public class LocalVPNService extends VpnService {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
-        executorService.shutdownNow();
+        threadPool.shutdownNow();
         Log.i(TAG, "Stopped");
     }
 
