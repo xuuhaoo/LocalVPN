@@ -28,7 +28,7 @@ import android.view.View;
 import android.widget.Button;
 
 
-public class LocalVPNActivity extends ActionBarActivity
+public class DIDIVPNActivity extends ActionBarActivity
 {
     private static final int VPN_REQUEST_CODE = 0x0F;
 
@@ -39,7 +39,7 @@ public class LocalVPNActivity extends ActionBarActivity
         @Override
         public void onReceive(Context context, Intent intent)
         {
-            if (LocalVPNService.BROADCAST_VPN_STATE.equals(intent.getAction()))
+            if (DIDIVPNService.BROADCAST_VPN_STATE.equals(intent.getAction()))
             {
                 if (intent.getBooleanExtra("running", false))
                     waitingForVPNStart = false;
@@ -63,7 +63,7 @@ public class LocalVPNActivity extends ActionBarActivity
         });
         waitingForVPNStart = false;
         LocalBroadcastManager.getInstance(this).registerReceiver(vpnStateReceiver,
-                new IntentFilter(LocalVPNService.BROADCAST_VPN_STATE));
+                new IntentFilter(DIDIVPNService.BROADCAST_VPN_STATE));
     }
 
     private void startVPN()
@@ -82,7 +82,7 @@ public class LocalVPNActivity extends ActionBarActivity
         if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK)
         {
             waitingForVPNStart = true;
-            startService(new Intent(this, LocalVPNService.class));
+            startService(new Intent(this, DIDIVPNService.class));
             enableButton(false);
         }
     }
@@ -91,7 +91,7 @@ public class LocalVPNActivity extends ActionBarActivity
     protected void onResume() {
         super.onResume();
 
-        enableButton(!waitingForVPNStart && !LocalVPNService.isRunning());
+        enableButton(!waitingForVPNStart && !DIDIVPNService.isRunning());
     }
 
     private void enableButton(boolean enable)

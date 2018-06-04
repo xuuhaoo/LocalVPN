@@ -22,16 +22,19 @@ import android.os.ParcelFileDescriptor;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.android.didivpn.runnable.virtual.VirtualRead;
-import com.android.didivpn.runnable.virtual.VirtualWrite;
+import com.android.didivpn.runnable.tcp.TcpFakeServer;
+import com.android.didivpn.runnable.virtual.VPNServiceProxy;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class LocalVPNService extends VpnService {
-    private static final String TAG = LocalVPNService.class.getSimpleName();
-    private static final String VPN_ADDRESS = "10.0.0.2"; // Only IPv4 support for now
+public class DIDIVPNService extends VpnService {
+    private static final String TAG = DIDIVPNService.class.getSimpleName();
+
+    private static final String VPN_ADDRESS = "10.0.0.1"; // Only IPv4 support for now
+
     private static final String VPN_ROUTE = "0.0.0.0"; // Intercept everything
 
     public static final String BROADCAST_VPN_STATE = "xyz.hexene.localvpn.VPN_STATE";
@@ -40,16 +43,23 @@ public class LocalVPNService extends VpnService {
 
     private ParcelFileDescriptor mParcelFileDescriptor = null;
 
-    private ExecutorService threadPool;
+    private ExecutorService mThreadPool;
 
     @Override
     public void onCreate() {
         super.onCreate();
         isRunning = true;
         initVPN();
-        threadPool = Executors.newCachedThreadPool();
-        threadPool.submit(new VirtualRead(mParcelFileDescriptor));
-        threadPool.submit(new VirtualWrite(mParcelFileDescriptor,this));
+
+        mThreadPool = Executors.newCachedThreadPool();
+        mThreadPool.submit(new VPNServiceProxy(mParcelFileDescriptor));
+
+        try {
+            //对外Tcp输出线程
+            mThreadPool.submit(new TcpFakeServer(this));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", true));
         Log.i(TAG, "Started");
@@ -78,7 +88,7 @@ public class LocalVPNService extends VpnService {
     public void onDestroy() {
         super.onDestroy();
         isRunning = false;
-        threadPool.shutdownNow();
+        mThreadPool.shutdownNow();
         Log.i(TAG, "Stopped");
     }
 

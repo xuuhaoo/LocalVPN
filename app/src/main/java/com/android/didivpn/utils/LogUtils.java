@@ -17,7 +17,7 @@ public class LogUtils {
     }
 
     public static void logPayload(Packet packet) {
-        byte[] payload = packet.getDataBytes();
+        byte[] payload = packet.getByteBuffer().array();
         if (payload.length == 0) {
             Log.i(TAG, "payload is empty!");
             return;

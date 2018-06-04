@@ -8,7 +8,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.android.didivpn.LocalVPNActivity"
+            android:name="com.android.didivpn.DIDIVPNActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -17,7 +17,7 @@
         </activity>
 
         <service
-            android:name="com.android.didivpn.LocalVPNService"
+            android:name="com.android.didivpn.DIDIVPNService"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.BIND_VPN_SERVICE">

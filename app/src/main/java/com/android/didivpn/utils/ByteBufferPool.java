@@ -23,7 +23,7 @@ public class ByteBufferPool {
     /**
      * 默认大小
      */
-    private static final int BUFFER_SIZE = 16384;
+    private static final int BUFFER_SIZE = 65535;
     /**
      * 缓存池
      */
