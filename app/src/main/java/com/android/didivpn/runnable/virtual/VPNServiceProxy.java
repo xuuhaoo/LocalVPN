@@ -40,9 +40,9 @@ public class VPNServiceProxy implements Runnable {
                     byteBuffer.flip();
                     IPv4 iPv4 = new IPv4(byteBuffer);
                     if (TCP.isTCP(iPv4.getProtocol())) {
-
+                        dispatchTCP(iPv4);
                     } else if (UDP.isUDP(iPv4.getProtocol())) {
-                        //TODO: 待完成
+                        dispatchUDP(iPv4);
                     }
                 }
 
@@ -50,5 +50,13 @@ public class VPNServiceProxy implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void dispatchTCP(IPv4 iPv4) {
+
+    }
+
+    private void dispatchUDP(IPv4 iPv4) {
+        //TODO: 待完成
     }
 }

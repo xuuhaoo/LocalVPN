@@ -71,7 +71,7 @@ public class TcpFakeServer implements Runnable {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                closeProxy();
+                closeLocalServer();
             }
         }
     }
@@ -84,16 +84,16 @@ public class TcpFakeServer implements Runnable {
     private void acceptChannel(ServerSocketChannel serverSocketChannel) {
         Tunnel localTunnel = new TcpTunnel(mSelector, mVpnService);
         try {
-            //获取到本地的通道
+            //获取到本地的管道
             SocketChannel localChannel = serverSocketChannel.accept();
             localTunnel.setChannel(localChannel);
-            //获取远程请求地址:端口
+            //获取请求远程的地址:端口
             InetSocketAddress remoteAddr = getDestAddr(localChannel);
             if (remoteAddr != null) {
                 //开启远程核心通道
                 SocketChannel channel = SocketChannel.open();
                 channel.configureBlocking(false);
-                //生成远程管道
+                //生成与远程的远程管道
                 Tunnel remoteTunnel = new TcpTunnel(mSelector, mVpnService);
                 remoteTunnel.setChannel(channel);
                 remoteTunnel.setDestAddr(remoteAddr);
@@ -136,7 +136,7 @@ public class TcpFakeServer implements Runnable {
     /**
      * 关闭代理服务器
      */
-    private void closeProxy() {
+    private void closeLocalServer() {
         if (mSelector != null) {
             try {
                 mSelector.close();
